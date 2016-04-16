@@ -1144,6 +1144,10 @@ enum
     McastResolver_FlagNew    = 2
 };
 
+// everyone loves proprietary language extensions in the global namespace
+#ifdef _MSC_VER
+#undef interface
+#endif
 typedef struct McastResolver
 {
     struct McastResolver *next;
@@ -3077,9 +3081,9 @@ typedef struct MD5state_st
     int num;
 } MD5_CTX;
 
-extern int MD5_Init(MD5_CTX *c);
-extern int MD5_Update(MD5_CTX *c, const void *data, unsigned long len);
-extern int MD5_Final(unsigned char *md, MD5_CTX *c);
+extern int mDNS_MD5_Init(MD5_CTX *c);
+extern int mDNS_MD5_Update(MD5_CTX *c, const void *data, unsigned long len);
+extern int mDNS_MD5_Final(unsigned char *md, MD5_CTX *c);
 
 // ***************************************************************************
 #if 0

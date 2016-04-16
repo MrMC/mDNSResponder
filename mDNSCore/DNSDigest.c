@@ -58,7 +58,7 @@ mDNSlocal mDNSu32 NToH32(mDNSu8 * bytes)
  *    replaced CC_LONG w/ mDNSu32
  *    replaced CC_MD5* with MD5*
  *    replaced CC_LONG w/ mDNSu32, removed conditional #defines from md5.h
- *    removed extern decls for MD5_Init/Update/Final from CommonDigest.h
+ *    removed extern decls for mDNS_MD5_Init/Update/Final from CommonDigest.h
  *    removed APPLE_COMMON_DIGEST specific #defines from md5_locl.h
  *
  * Note: machine archetecure specific conditionals from the original sources are turned off, but are left in the code
@@ -190,7 +190,7 @@ mDNSlocal mDNSu32 NToH32(mDNSu8 * bytes)
 #define MD5_LBLOCK  (MD5_CBLOCK/4)
 #define MD5_DIGEST_LENGTH 16
 
-void MD5_Transform(MD5_CTX *c, const unsigned char *b);
+void mDNS_MD5_Transform(MD5_CTX *c, const unsigned char *b);
 
 // From md5_locl.h
 
@@ -208,7 +208,7 @@ void md5_block_asm_data_order_aligned (MD5_CTX *c, const mDNSu32 *p,int num);
 #endif
 
 void md5_block_host_order (MD5_CTX *c, const void *p,int num);
-void md5_block_data_order (MD5_CTX *c, const void *p,int num);
+void mDNS_md5_block_data_order (MD5_CTX *c, const void *p,int num);
 
 #if defined(__i386) || defined(__i386__) || defined(_M_IX86) || defined(__INTEL__)
 /*
@@ -232,7 +232,7 @@ void md5_block_data_order (MD5_CTX *c, const void *p,int num);
  *
  *				<appro@fy.chalmers.se>
  */
-#define md5_block_data_order md5_block_host_order
+#define mDNS_md5_block_data_order md5_block_host_order
 #endif
 
 #define DATA_ORDER_IS_LITTLE_ENDIAN
@@ -243,9 +243,9 @@ void md5_block_data_order (MD5_CTX *c, const void *p,int num);
 #define HASH_CBLOCK     MD5_CBLOCK
 #define HASH_LBLOCK     MD5_LBLOCK
 
-#define HASH_UPDATE     MD5_Update
-#define HASH_TRANSFORM  MD5_Transform
-#define HASH_FINAL      MD5_Final
+#define HASH_UPDATE     mDNS_MD5_Update
+#define HASH_TRANSFORM  mDNS_MD5_Transform
+#define HASH_FINAL      mDNS_MD5_Final
 
 #define HASH_MAKE_STRING(c,s)   do {    \
         unsigned long ll;       \
@@ -255,12 +255,12 @@ void md5_block_data_order (MD5_CTX *c, const void *p,int num);
         ll=(c)->D; HOST_l2c(ll,(s));    \
 } while (0)
 #define HASH_BLOCK_HOST_ORDER   md5_block_host_order
-#if !defined(L_ENDIAN) || defined(md5_block_data_order)
-#define HASH_BLOCK_DATA_ORDER   md5_block_data_order
+#if !defined(L_ENDIAN) || defined(mDNS_md5_block_data_order)
+#define HASH_BLOCK_DATA_ORDER   mDNS_md5_block_data_order
 /*
  * Little-endians (Intel and Alpha) feel better without this.
  * It looks like memcpy does better job than generic
- * md5_block_data_order on copying-n-aligning input data.
+ * mDNS_md5_block_data_order on copying-n-aligning input data.
  * But frankly speaking I didn't expect such result on Alpha.
  * On the other hand I've got this with egcs-1.0.2 and if
  * program is compiled with another (better?) compiler it
@@ -339,11 +339,11 @@ void md5_block_data_order (MD5_CTX *c, const void *p,int num);
  *	#define HASH_CTX		MD5_CTX
  *	#define HASH_CBLOCK		MD5_CBLOCK
  *	#define HASH_LBLOCK		MD5_LBLOCK
- *	#define HASH_UPDATE		MD5_Update
- *	#define HASH_TRANSFORM		MD5_Transform
- *	#define HASH_FINAL		MD5_Final
+ *	#define HASH_UPDATE		mDNS_MD5_Update
+ *	#define HASH_TRANSFORM		mDNS_MD5_Transform
+ *	#define HASH_FINAL		mDNS_MD5_Final
  *	#define HASH_BLOCK_HOST_ORDER	md5_block_host_order
- *	#define HASH_BLOCK_DATA_ORDER	md5_block_data_order
+ *	#define HASH_BLOCK_DATA_ORDER	mDNS_md5_block_data_order
  *
  *					<appro@fy.chalmers.se>
  */
@@ -916,7 +916,7 @@ int HASH_FINAL (unsigned char *md, HASH_CTX *c)
 #define INIT_DATA_C (unsigned long)0x98badcfeL
 #define INIT_DATA_D (unsigned long)0x10325476L
 
-int MD5_Init(MD5_CTX *c)
+int mDNS_MD5_Init(MD5_CTX *c)
 {
     c->A=INIT_DATA_A;
     c->B=INIT_DATA_B;
@@ -1018,11 +1018,11 @@ void md5_block_host_order (MD5_CTX *c, const void *data, int num)
 }
 #endif
 
-#ifndef md5_block_data_order
+#ifndef mDNS_md5_block_data_order
 #ifdef X
 #undef X
 #endif
-void md5_block_data_order (MD5_CTX *c, const void *data_, int num)
+void mDNS_md5_block_data_order (MD5_CTX *c, const void *data_, int num)
 {
     const unsigned char *data=data_;
     register unsigned MD32_REG_T A,B,C,D,l;
@@ -1288,9 +1288,9 @@ mDNSlocal void DNSDigest_ConstructHMACKey(DomainAuthInfo *info, const mDNSu8 *ke
     // If key is longer than HMAC_LEN reset it to MD5(key)
     if (len > HMAC_LEN)
     {
-        MD5_Init(&k);
-        MD5_Update(&k, key, len);
-        MD5_Final(buf, &k);
+        mDNS_MD5_Init(&k);
+        mDNS_MD5_Update(&k, key, len);
+        mDNS_MD5_Final(buf, &k);
         key = buf;
         len = MD5_LEN;
     }
@@ -1333,31 +1333,31 @@ mDNSexport void DNSDigest_SignMessage(DNSMessage *msg, mDNSu8 **end, DomainAuthI
     mDNSu16 numAdditionals = (mDNSu16)((mDNSu16)countPtr[0] << 8 | countPtr[1]);
 
     // Init MD5 context, digest inner key pad and message
-    MD5_Init(&c);
-    MD5_Update(&c, info->keydata_ipad, HMAC_LEN);
-    MD5_Update(&c, (mDNSu8 *)msg, (unsigned long)(*end - (mDNSu8 *)msg));
+    mDNS_MD5_Init(&c);
+    mDNS_MD5_Update(&c, info->keydata_ipad, HMAC_LEN);
+    mDNS_MD5_Update(&c, (mDNSu8 *)msg, (unsigned long)(*end - (mDNSu8 *)msg));
 
     // Construct TSIG RR, digesting variables as apporpriate
     mDNS_SetupResourceRecord(&tsig, mDNSNULL, 0, kDNSType_TSIG, 0, kDNSRecordTypeKnownUnique, AuthRecordAny, mDNSNULL, mDNSNULL);
 
     // key name
     AssignDomainName(&tsig.namestorage, &info->keyname);
-    MD5_Update(&c, info->keyname.c, DomainNameLength(&info->keyname));
+    mDNS_MD5_Update(&c, info->keyname.c, DomainNameLength(&info->keyname));
 
     // class
     tsig.resrec.rrclass = kDNSQClass_ANY;
     buf = mDNSOpaque16fromIntVal(kDNSQClass_ANY);
-    MD5_Update(&c, buf.b, sizeof(mDNSOpaque16));
+    mDNS_MD5_Update(&c, buf.b, sizeof(mDNSOpaque16));
 
     // ttl
     tsig.resrec.rroriginalttl = 0;
-    MD5_Update(&c, (mDNSu8 *)&tsig.resrec.rroriginalttl, sizeof(tsig.resrec.rroriginalttl));
+    mDNS_MD5_Update(&c, (mDNSu8 *)&tsig.resrec.rroriginalttl, sizeof(tsig.resrec.rroriginalttl));
 
     // alg name
     AssignDomainName(&tsig.resrec.rdata->u.name, &HMAC_MD5_AlgName);
     len = DomainNameLength(&HMAC_MD5_AlgName);
     rdata = tsig.resrec.rdata->u.data + len;
-    MD5_Update(&c, HMAC_MD5_AlgName.c, len);
+    mDNS_MD5_Update(&c, HMAC_MD5_AlgName.c, len);
 
     // time
     // get UTC (universal time), convert to 48-bit unsigned in network byte order
@@ -1372,29 +1372,29 @@ mDNSexport void DNSDigest_SignMessage(DNSMessage *msg, mDNSu8 **end, DomainAuthI
 
     mDNSPlatformMemCopy(rdata, utc48, 6);
     rdata += 6;
-    MD5_Update(&c, utc48, 6);
+    mDNS_MD5_Update(&c, utc48, 6);
 
     // 300 sec is fudge recommended in RFC 2485
     rdata[0] = (mDNSu8)((300 >> 8)  & 0xff);
     rdata[1] = (mDNSu8)( 300        & 0xff);
-    MD5_Update(&c, rdata, sizeof(mDNSOpaque16));
+    mDNS_MD5_Update(&c, rdata, sizeof(mDNSOpaque16));
     rdata += sizeof(mDNSOpaque16);
 
     // digest error (tcode) and other data len (zero) - we'll add them to the rdata later
     buf.b[0] = (mDNSu8)((tcode >> 8) & 0xff);
     buf.b[1] = (mDNSu8)( tcode       & 0xff);
-    MD5_Update(&c, buf.b, sizeof(mDNSOpaque16));  // error
+    mDNS_MD5_Update(&c, buf.b, sizeof(mDNSOpaque16));  // error
     buf.NotAnInteger = 0;
-    MD5_Update(&c, buf.b, sizeof(mDNSOpaque16));  // other data len
+    mDNS_MD5_Update(&c, buf.b, sizeof(mDNSOpaque16));  // other data len
 
     // finish the message & tsig var hash
-    MD5_Final(digest, &c);
+    mDNS_MD5_Final(digest, &c);
 
     // perform outer MD5 (outer key pad, inner digest)
-    MD5_Init(&c);
-    MD5_Update(&c, info->keydata_opad, HMAC_LEN);
-    MD5_Update(&c, digest, MD5_LEN);
-    MD5_Final(digest, &c);
+    mDNS_MD5_Init(&c);
+    mDNS_MD5_Update(&c, info->keydata_opad, HMAC_LEN);
+    mDNS_MD5_Update(&c, digest, MD5_LEN);
+    mDNS_MD5_Final(digest, &c);
 
     // set remaining rdata fields
     rdata[0] = (mDNSu8)((MD5_LEN >> 8)  & 0xff);
@@ -1500,52 +1500,52 @@ mDNSexport mDNSBool DNSDigest_VerifyMessage(DNSMessage *msg, mDNSu8 *end, LargeC
 
     // Init MD5 context, digest inner key pad and message
 
-    MD5_Init(&c);
-    MD5_Update(&c, info->keydata_ipad, HMAC_LEN);
-    MD5_Update(&c, (mDNSu8*) msg, (unsigned long)(end - (mDNSu8*) msg));
+    mDNS_MD5_Init(&c);
+    mDNS_MD5_Update(&c, info->keydata_ipad, HMAC_LEN);
+    mDNS_MD5_Update(&c, (mDNSu8*) msg, (unsigned long)(end - (mDNSu8*) msg));
 
     // Key name
 
-    MD5_Update(&c, lcr->r.resrec.name->c, DomainNameLength(lcr->r.resrec.name));
+    mDNS_MD5_Update(&c, lcr->r.resrec.name->c, DomainNameLength(lcr->r.resrec.name));
 
     // Class name
 
     buf = mDNSOpaque16fromIntVal(lcr->r.resrec.rrclass);
-    MD5_Update(&c, buf.b, sizeof(mDNSOpaque16));
+    mDNS_MD5_Update(&c, buf.b, sizeof(mDNSOpaque16));
 
     // TTL
 
-    MD5_Update(&c, (mDNSu8*) &lcr->r.resrec.rroriginalttl, sizeof(lcr->r.resrec.rroriginalttl));
+    mDNS_MD5_Update(&c, (mDNSu8*) &lcr->r.resrec.rroriginalttl, sizeof(lcr->r.resrec.rroriginalttl));
 
     // Algorithm
 
-    MD5_Update(&c, algo->c, DomainNameLength(algo));
+    mDNS_MD5_Update(&c, algo->c, DomainNameLength(algo));
 
     // Time
 
-    MD5_Update(&c, utc48, 6);
+    mDNS_MD5_Update(&c, utc48, 6);
 
     // Fudge
 
     buf = mDNSOpaque16fromIntVal(fudge);
-    MD5_Update(&c, buf.b, sizeof(mDNSOpaque16));
+    mDNS_MD5_Update(&c, buf.b, sizeof(mDNSOpaque16));
 
     // Digest error and other data len (both zero) - we'll add them to the rdata later
 
     buf.NotAnInteger = 0;
-    MD5_Update(&c, buf.b, sizeof(mDNSOpaque16));  // error
-    MD5_Update(&c, buf.b, sizeof(mDNSOpaque16));  // other data len
+    mDNS_MD5_Update(&c, buf.b, sizeof(mDNSOpaque16));  // error
+    mDNS_MD5_Update(&c, buf.b, sizeof(mDNSOpaque16));  // other data len
 
     // Finish the message & tsig var hash
 
-    MD5_Final(thisDigest, &c);
+    mDNS_MD5_Final(thisDigest, &c);
 
     // perform outer MD5 (outer key pad, inner digest)
 
-    MD5_Init(&c);
-    MD5_Update(&c, info->keydata_opad, HMAC_LEN);
-    MD5_Update(&c, thisDigest, MD5_LEN);
-    MD5_Final(thisDigest, &c);
+    mDNS_MD5_Init(&c);
+    mDNS_MD5_Update(&c, info->keydata_opad, HMAC_LEN);
+    mDNS_MD5_Update(&c, thisDigest, MD5_LEN);
+    mDNS_MD5_Final(thisDigest, &c);
 
     if (!mDNSPlatformMemSame(thisDigest, thatDigest, MD5_LEN))
     {

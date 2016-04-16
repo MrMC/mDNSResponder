@@ -25,6 +25,13 @@
 
 #include "dns_sd.h"             // Defines the interface to the client layer above
 #include "mDNSEmbeddedAPI.h"        // The interface we're building on top of
+#ifndef _MSC_VER
+#include <sys/socket.h>
+#include <netinet/in.h>
+#else
+#include <winsock2.h>
+#endif
+
 extern mDNS mDNSStorage;        // We need to pass the address of this storage to the lower-layer functions
 
 #if MDNS_BUILDINGSHAREDLIBRARY || MDNS_BUILDINGSTUBLIBRARY
@@ -67,6 +74,14 @@ typedef struct
     void                   *context;
     DNSQuestion q;
 } mDNS_DirectOP_Browse;
+
+typedef struct
+{
+    mDNS_DirectOP_Dispose  *disposefn;
+    DNSServiceRef                aQuery;
+    DNSServiceGetAddrInfoReply   callback;
+    void                         *context;
+} mDNS_DirectOP_GetAddrInfo;
 
 typedef struct
 {
@@ -399,7 +414,7 @@ DNSServiceErrorType DNSServiceBrowse
 
     // Check parameters
     if (!regtype[0] || !MakeDomainNameFromDNSNameString(&t, regtype))      { errormsg = "Illegal regtype"; goto badparam; }
-    if (!MakeDomainNameFromDNSNameString(&d, *domain ? domain : "local.")) { errormsg = "Illegal domain";  goto badparam; }
+    if (!MakeDomainNameFromDNSNameString(&d, (domain && *domain) ? domain : "local.")) { errormsg = "Illegal domain";  goto badparam; }
 
     // Allocate memory, and handle failure
     x = (mDNS_DirectOP_Browse *)mDNSPlatformMemAllocate(sizeof(*x));
@@ -668,7 +683,7 @@ DNSServiceErrorType DNSServiceQueryRecord
     x->q.ExpectUnique        = mDNSfalse;
     x->q.ForceMCast          = (flags & kDNSServiceFlagsForceMulticast) != 0;
     x->q.ReturnIntermed      = (flags & kDNSServiceFlagsReturnIntermediates) != 0;
-    x->q.SuppressUnsable     = (flags & kDNSServiceFlagsSuppressUnusable) != 0;
+    x->q.SuppressUnusable    = (flags & kDNSServiceFlagsSuppressUnusable) != 0;
     x->q.SearchListIndex     = 0;
     x->q.AppendSearchDomains = 0;
     x->q.RetryWithSearchDomains = mDNSfalse;
